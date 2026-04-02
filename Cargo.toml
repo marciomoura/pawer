@@ -1,0 +1,15 @@
+[package]
+name = "pawer"
+version = "0.1.0"
+edition = "2021"
+description = "A collection of basic-blocks for control of power electronic converters"
+license = "MIT"
+repository = "https://github.com/marciomoura/pawer"
+
+[lib]
+name = "pawer"
+path = "src/lib.rs"
+
+[[example]]
+name = "filter_example"
+path = "examples/filter_example.rs"

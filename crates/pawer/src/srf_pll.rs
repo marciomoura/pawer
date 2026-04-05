@@ -183,7 +183,8 @@ impl SrfPll {
         self.phase_angle = angle;
         self.dq = input.to_dq(angle);
         let current_error = self.dq.q();
-        self.frequency_pi.preset_for_bumpless_transfer(0.0, current_error);
+        self.frequency_pi
+            .preset_for_bumpless_transfer(0.0, current_error);
         self.frequency_filter.reset_to(self.estimated_frequency_hz);
     }
 
@@ -345,8 +346,16 @@ mod tests {
         );
 
         // dq should be zero before any update
-        assert!(pll.dq().d().abs() < 0.01, "d should be 0, got {}", pll.dq().d());
-        assert!(pll.dq().q().abs() < 0.01, "q should be 0, got {}", pll.dq().q());
+        assert!(
+            pll.dq().d().abs() < 0.01,
+            "d should be 0, got {}",
+            pll.dq().d()
+        );
+        assert!(
+            pll.dq().q().abs() < 0.01,
+            "q should be 0, got {}",
+            pll.dq().q()
+        );
     }
 
     #[test]
@@ -354,7 +363,13 @@ mod tests {
         let mut pll = make_pll();
         let settle_steps = (0.5 / TS as f64) as usize; // 0.5 s
 
-        simulate(&mut pll, AngleWrapped::default(), NOMINAL_HZ, AMPLITUDE, settle_steps);
+        simulate(
+            &mut pll,
+            AngleWrapped::default(),
+            NOMINAL_HZ,
+            AMPLITUDE,
+            settle_steps,
+        );
 
         let target_omega = TWO_PI * NOMINAL_HZ;
         assert!(
@@ -390,7 +405,13 @@ mod tests {
         );
 
         // Step to 60 Hz
-        simulate(&mut pll, sig_angle, step_hz, AMPLITUDE, (0.6 / TS as f64) as usize);
+        simulate(
+            &mut pll,
+            sig_angle,
+            step_hz,
+            AMPLITUDE,
+            (0.6 / TS as f64) as usize,
+        );
 
         let target_omega = TWO_PI * step_hz;
         assert!(
@@ -458,7 +479,13 @@ mod tests {
         );
 
         // Continue with new amplitude
-        simulate(&mut pll, sig_angle, NOMINAL_HZ, new_amplitude, (0.5 / TS as f64) as usize);
+        simulate(
+            &mut pll,
+            sig_angle,
+            NOMINAL_HZ,
+            new_amplitude,
+            (0.5 / TS as f64) as usize,
+        );
 
         let target_omega = TWO_PI * NOMINAL_HZ;
         assert!(

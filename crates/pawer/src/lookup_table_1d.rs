@@ -59,7 +59,8 @@ impl<const N: usize> LookupTable1D<N> {
     ///
     /// Returns `idx` such that `x_axis[idx] <= x < x_axis[idx + 1]`,
     /// clamped to `[0, N-2]`.
-    fn find_lower_index(&self, x: Real) -> usize {        let mut low: usize = 0;
+    fn find_lower_index(&self, x: Real) -> usize {
+        let mut low: usize = 0;
         let mut high: usize = N - 1;
 
         while low < high {

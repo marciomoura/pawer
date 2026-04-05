@@ -109,7 +109,10 @@ impl ThreePhaseGenerator {
     /// Schedule a one-shot frequency step: `delta_hz` is added to the
     /// current frequency when the simulation time reaches `time`.
     pub fn schedule_frequency_step(&mut self, delta_hz: f64, time: f64) {
-        self.freq_step = Some(Step { delta: delta_hz, time });
+        self.freq_step = Some(Step {
+            delta: delta_hz,
+            time,
+        });
     }
 
     /// Schedule a linear frequency ramp.
@@ -118,7 +121,11 @@ impl ThreePhaseGenerator {
     /// interval `[start_time, end_time]`.
     pub fn schedule_frequency_ramp(&mut self, delta_hz: f64, start_time: f64, end_time: f64) {
         assert!(end_time > start_time, "Ramp end must be after start");
-        self.freq_ramp = Some(Ramp { delta: delta_hz, start: start_time, end: end_time });
+        self.freq_ramp = Some(Ramp {
+            delta: delta_hz,
+            start: start_time,
+            end: end_time,
+        });
     }
 
     /// Schedule a one-shot amplitude step: `delta` is added to the

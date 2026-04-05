@@ -43,7 +43,11 @@ impl Logger {
         for name in adhoc.keys() {
             self.adhoc_names.insert(name.clone());
         }
-        self.records.push(LogRecord { time, registered, adhoc });
+        self.records.push(LogRecord {
+            time,
+            registered,
+            adhoc,
+        });
     }
 
     /// Remove all recorded data (but keep known signal names).
@@ -84,7 +88,8 @@ impl Logger {
     pub fn series(&self, name: &str) -> Vec<(f64, Real)> {
         // Check if it's a registered signal
         if let Some(idx) = self.registered_names.iter().position(|n| n == name) {
-            return self.records
+            return self
+                .records
                 .iter()
                 .filter_map(|r| r.registered.get(idx).map(|&v| (r.time, v)))
                 .collect();

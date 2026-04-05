@@ -5,7 +5,7 @@
 //! mirror the interactive scenario.
 
 use pawer::constants::TWO_PI;
-use pawer::srf_pll::{SrfPll, GAINS_50HZ_CROSSOVER};
+use pawer::srf_pll::{GAINS_50HZ_CROSSOVER, SrfPll};
 use pawer::types::Real;
 use pawer_examples::waveform_gen::ThreePhaseGenerator;
 
@@ -92,17 +92,12 @@ fn frequency_step_response() {
     let mut pll = make_pll();
     let mut wgen = make_gen();
 
-    let freq_fn = |t: f64| -> f64 {
-        if t >= step_at { target_hz } else { NOMINAL_HZ }
-    };
+    let freq_fn = |t: f64| -> f64 { if t >= step_at { target_hz } else { NOMINAL_HZ } };
 
     // Phase 1: lock (0 → 0.5 s)
-    simulate(
-        &mut pll,
-        &mut wgen,
-        (step_at / TS) as usize,
-        |t| if t >= step_at { target_hz } else { NOMINAL_HZ },
-    );
+    simulate(&mut pll, &mut wgen, (step_at / TS) as usize, |t| {
+        if t >= step_at { target_hz } else { NOMINAL_HZ }
+    });
 
     let locked_err = (pll.estimated_frequency_hz() - NOMINAL_HZ as Real).abs();
     assert!(
@@ -173,8 +168,7 @@ fn frequency_ramp_response() {
     let total_steps = (3.0 / TS) as usize;
     for i in 0..total_steps {
         let t = i as f64 * TS;
-        let progress =
-            ((t - ramp_start) / (ramp_end - ramp_start)).clamp(0.0, 1.0);
+        let progress = ((t - ramp_start) / (ramp_end - ramp_start)).clamp(0.0, 1.0);
         let freq = if t < ramp_start {
             NOMINAL_HZ
         } else {

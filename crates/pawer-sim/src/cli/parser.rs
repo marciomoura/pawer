@@ -90,7 +90,9 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
         "/status" => Ok(Command::Status),
         "/signals" | "/sigs" => Ok(Command::Signals),
         "/params" => Ok(Command::Params),
-        "/snapshot" | "/snap" => Ok(Command::Snapshot(args.iter().map(|s| s.to_string()).collect())),
+        "/snapshot" | "/snap" => Ok(Command::Snapshot(
+            args.iter().map(|s| s.to_string()).collect(),
+        )),
         "/format" | "/fmt" => parse_format(&args),
         "/help" | "/h" | "/?" => Ok(Command::Help),
         "/quit" | "/exit" | "/q" => Ok(Command::Quit),
@@ -206,7 +208,10 @@ fn parse_save(args: &[&str]) -> Result<Command, ParseError> {
 fn parse_format(args: &[&str]) -> Result<Command, ParseError> {
     if args.is_empty() {
         // No args → show current format (handled by command executor)
-        return Ok(Command::Format(FormatArgs { notation: None, precision: None }));
+        return Ok(Command::Format(FormatArgs {
+            notation: None,
+            precision: None,
+        }));
     }
 
     let mut notation = None;
@@ -217,23 +222,24 @@ fn parse_format(args: &[&str]) -> Result<Command, ParseError> {
             "default" | "fixed" | "scientific" | "sci" => {
                 notation = Some(arg.to_owned());
             }
-            _ => {
-                match arg.parse::<usize>() {
-                    Ok(p) => precision = Some(p),
-                    Err(_) => {
-                        return Err(ParseError {
-                            message: format!(
-                                "Invalid format argument \"{}\". Use: /format [default|fixed|scientific] [precision]",
-                                arg
-                            ),
-                        });
-                    }
+            _ => match arg.parse::<usize>() {
+                Ok(p) => precision = Some(p),
+                Err(_) => {
+                    return Err(ParseError {
+                        message: format!(
+                            "Invalid format argument \"{}\". Use: /format [default|fixed|scientific] [precision]",
+                            arg
+                        ),
+                    });
                 }
-            }
+            },
         }
     }
 
-    Ok(Command::Format(FormatArgs { notation, precision }))
+    Ok(Command::Format(FormatArgs {
+        notation,
+        precision,
+    }))
 }
 
 #[cfg(test)]

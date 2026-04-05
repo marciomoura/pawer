@@ -88,7 +88,9 @@ pub fn plot_signals(
             .draw_series(LineSeries::new(data.iter().copied(), color.stroke_width(2)))
             .map_err(|e| PlotError(format!("Series draw error: {}", e)))?
             .label(name.as_str())
-            .legend(move |(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], color.stroke_width(2)));
+            .legend(move |(x, y)| {
+                PathElement::new(vec![(x, y), (x + 20, y)], color.stroke_width(2))
+            });
     }
 
     chart

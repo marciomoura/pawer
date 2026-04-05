@@ -45,7 +45,7 @@ struct Ramp<T> {
 /// # Typical usage
 ///
 /// ```
-/// use pawer_sim::waveform_gen::ThreePhaseGenerator;
+/// use pawer_examples::waveform_gen::ThreePhaseGenerator;
 ///
 /// let mut wgen = ThreePhaseGenerator::new(100e-6); // 10 kHz
 /// wgen.set_frequency(50.0);

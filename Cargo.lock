@@ -194,6 +194,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "pawer-examples"
+version = "0.1.0"
+dependencies = [
+ "pawer",
+ "pawer-sim",
+]
+
+[[package]]
 name = "pawer-sim"
 version = "0.1.0"
 dependencies = [

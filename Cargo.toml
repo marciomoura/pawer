@@ -2,5 +2,6 @@
 members = [
     "crates/pawer",
     "crates/pawer-sim",
+    "crates/pawer-examples",
 ]
 resolver = "2"

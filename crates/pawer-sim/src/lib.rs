@@ -8,6 +8,7 @@ pub mod export;
 pub mod logger;
 pub mod plotter;
 pub mod scenario;
+pub mod waveform_gen;
 
 /// Convenience re-exports for typical scenario definitions.
 pub mod prelude {

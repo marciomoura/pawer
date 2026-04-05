@@ -130,7 +130,7 @@ impl PiController {
     pub fn preset_for_bumpless_transfer(&mut self, desired_output: Real, current_error: Real) {
         let mut preset = desired_output - self.kp * current_error;
         if self.has_output_limits {
-            preset = clamp(preset, self.output_min, self.output_max);
+            preset = preset.clamp(self.output_min, self.output_max);
         }
         self.integrator.reset(preset);
         self.output_saturated = false;
@@ -152,7 +152,7 @@ impl PiController {
         let mut saturated = unsaturated;
         let mut is_sat = false;
         if self.has_output_limits {
-            saturated = clamp(unsaturated, self.output_min, self.output_max);
+            saturated = unsaturated.clamp(self.output_min, self.output_max);
             is_sat = libm::fabsf(saturated - unsaturated) > 1e-9;
         }
 
@@ -212,16 +212,6 @@ impl PiController {
     /// Current anti-windup gain.
     pub fn antiwindup_gain(&self) -> Real {
         self.kc
-    }
-}
-
-fn clamp(value: Real, min: Real, max: Real) -> Real {
-    if value < min {
-        min
-    } else if value > max {
-        max
-    } else {
-        value
     }
 }
 

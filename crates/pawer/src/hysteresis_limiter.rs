@@ -6,6 +6,7 @@
 /// near a single threshold.
 use crate::types::Real;
 
+#[derive(Default)]
 pub struct HysteresisLimiter {
     low_threshold: Real,
     high_threshold: Real,
@@ -15,11 +16,7 @@ pub struct HysteresisLimiter {
 impl HysteresisLimiter {
     /// Creates a new [`HysteresisLimiter`] with both thresholds at 0.0.
     pub fn new() -> Self {
-        Self {
-            low_threshold: 0.0,
-            high_threshold: 0.0,
-            output: false,
-        }
+        Self::default()
     }
 
     /// Sets the low and high thresholds.
@@ -51,12 +48,6 @@ impl HysteresisLimiter {
     /// Returns the current comparator output.
     pub fn output(&self) -> bool {
         self.output
-    }
-}
-
-impl Default for HysteresisLimiter {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

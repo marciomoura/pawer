@@ -1,8 +1,7 @@
 //! Linear ramp generator.
 //!
-//! Ported from C++ ramp utilities. Ramps a value linearly from an initial to a
-//! final value over a configurable duration. Suitable for `no_std` embedded
-//! targets with no dynamic allocation.
+//! Ramps a value linearly from an initial to a final value over a configurable
+//! duration. Suitable for `no_std` embedded targets with no dynamic allocation.
 
 use crate::types::Real;
 
@@ -110,13 +109,7 @@ impl LinearRamp {
 
 #[inline]
 fn clamp01(v: Real) -> Real {
-    if v < 0.0 {
-        0.0
-    } else if v > 1.0 {
-        1.0
-    } else {
-        v
-    }
+    v.clamp(0.0, 1.0)
 }
 
 // ---------------------------------------------------------------------------
@@ -129,7 +122,7 @@ mod tests {
     const EPSILON: Real = 1e-6;
 
     fn approx_eq(a: Real, b: Real) -> bool {
-        libm::fabsf(a - b) < EPSILON
+        (a - b).abs() < EPSILON
     }
 
     // -- Basic ramp 0 → 10 over 1 s, Ts = 0.1 s ----------------------------

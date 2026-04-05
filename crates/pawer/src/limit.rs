@@ -1,6 +1,5 @@
 //! Clamping / saturation helpers for control signals.
 //!
-//! Ported from C++ `limit.hpp` (namespace `yeet::control`).
 //! Provides both `f32` (with epsilon comparison) and `i32` (exact comparison)
 //! variants.
 
@@ -21,21 +20,13 @@ pub struct LimitResult<T> {
 /// Clamp `value` to at most `max_value`.
 #[inline]
 pub fn upper(value: f32, max_value: f32) -> f32 {
-    if value > max_value {
-        max_value
-    } else {
-        value
-    }
+    value.min(max_value)
 }
 
 /// Clamp `value` to at least `min_value`.
 #[inline]
 pub fn lower(value: f32, min_value: f32) -> f32 {
-    if value < min_value {
-        min_value
-    } else {
-        value
-    }
+    value.max(min_value)
 }
 
 /// Clamp `value` to `[min_value, max_value]`.
@@ -44,8 +35,11 @@ pub fn lower(value: f32, min_value: f32) -> f32 {
 /// Panics if `max_value <= min_value`.
 #[inline]
 pub fn range(value: f32, min_value: f32, max_value: f32) -> f32 {
-    debug_assert!(max_value > min_value, "max_value must be greater than min_value");
-    lower(upper(value, max_value), min_value)
+    debug_assert!(
+        max_value > min_value,
+        "max_value must be greater than min_value"
+    );
+    value.clamp(min_value, max_value)
 }
 
 /// Returns `true` if `value` exceeds `max_value` by more than [`EPSILON`].
@@ -89,28 +83,23 @@ pub fn range_with_upper_limit_status(
 /// Clamp `value` to at most `max_value` (integer).
 #[inline]
 pub fn upper_i32(value: i32, max_value: i32) -> i32 {
-    if value > max_value {
-        max_value
-    } else {
-        value
-    }
+    value.min(max_value)
 }
 
 /// Clamp `value` to at least `min_value` (integer).
 #[inline]
 pub fn lower_i32(value: i32, min_value: i32) -> i32 {
-    if value < min_value {
-        min_value
-    } else {
-        value
-    }
+    value.max(min_value)
 }
 
 /// Clamp `value` to `[min_value, max_value]` (integer).
 #[inline]
 pub fn range_i32(value: i32, min_value: i32, max_value: i32) -> i32 {
-    debug_assert!(max_value > min_value, "max_value must be greater than min_value");
-    lower_i32(upper_i32(value, max_value), min_value)
+    debug_assert!(
+        max_value > min_value,
+        "max_value must be greater than min_value"
+    );
+    value.clamp(min_value, max_value)
 }
 
 /// Returns `true` if `value` exceeds `max_value` (integer, exact comparison).

@@ -8,7 +8,7 @@ use core::ops::{
 };
 
 use crate::angle::AngleWrapped;
-use crate::constants::{SQRT_3, TWO_THIRDS, TWO_PI};
+use crate::constants::{SQRT_3, TWO_PI, TWO_THIRDS};
 use crate::types::Real;
 
 // ---------------------------------------------------------------------------
@@ -204,7 +204,7 @@ impl Abc<Real> {
     }
 
     /// Combined Clarke + Park transform (abc → dq).
-    pub fn to_dq(&self, theta: &AngleWrapped) -> Dq<Real> {
+    pub fn to_dq(&self, theta: AngleWrapped) -> Dq<Real> {
         self.to_alphabeta().to_dq(theta)
     }
 }
@@ -381,15 +381,12 @@ impl AlphaBeta<Real> {
     }
 
     /// Park transform (αβ → dq).
-    pub fn to_dq(&self, theta: &AngleWrapped) -> Dq<Real> {
+    pub fn to_dq(&self, theta: AngleWrapped) -> Dq<Real> {
         let cos = libm::cosf(theta.radians());
         let sin = libm::sinf(theta.radians());
         let alpha = self.alpha();
         let beta = self.beta();
-        Dq::new(
-            cos * alpha + sin * beta,
-            -sin * alpha + cos * beta,
-        )
+        Dq::new(cos * alpha + sin * beta, -sin * alpha + cos * beta)
     }
 
     /// Vector magnitude √(α² + β²).
@@ -403,15 +400,12 @@ impl AlphaBeta<Real> {
     }
 
     /// Counter-clockwise rotation by `theta`.
-    pub fn rotate(&self, theta: &AngleWrapped) -> AlphaBeta<Real> {
+    pub fn rotate(&self, theta: AngleWrapped) -> AlphaBeta<Real> {
         let cos = libm::cosf(theta.radians());
         let sin = libm::sinf(theta.radians());
         let alpha = self.alpha();
         let beta = self.beta();
-        AlphaBeta::new(
-            alpha * cos - beta * sin,
-            alpha * sin + beta * cos,
-        )
+        AlphaBeta::new(alpha * cos - beta * sin, alpha * sin + beta * cos)
     }
 }
 
@@ -573,19 +567,16 @@ impl Mul<Dq<f32>> for f32 {
 
 impl Dq<Real> {
     /// Inverse Park transform (dq → αβ).
-    pub fn to_alphabeta(&self, theta: &AngleWrapped) -> AlphaBeta<Real> {
+    pub fn to_alphabeta(&self, theta: AngleWrapped) -> AlphaBeta<Real> {
         let cos = libm::cosf(theta.radians());
         let sin = libm::sinf(theta.radians());
         let d = self.d();
         let q = self.q();
-        AlphaBeta::new(
-            cos * d - sin * q,
-            sin * d + cos * q,
-        )
+        AlphaBeta::new(cos * d - sin * q, sin * d + cos * q)
     }
 
     /// Combined inverse Park + inverse Clarke (dq → abc).
-    pub fn to_abc(&self, theta: &AngleWrapped) -> Abc<Real> {
+    pub fn to_abc(&self, theta: AngleWrapped) -> Abc<Real> {
         self.to_alphabeta(theta).to_abc()
     }
 
@@ -595,20 +586,17 @@ impl Dq<Real> {
     }
 
     /// Absolute phase angle: frame_angle + atan2(q, d).
-    pub fn phase(&self, frame_angle: &AngleWrapped) -> AngleWrapped {
-        *frame_angle + libm::atan2f(self.q(), self.d())
+    pub fn phase(&self, frame_angle: AngleWrapped) -> AngleWrapped {
+        frame_angle + libm::atan2f(self.q(), self.d())
     }
 
     /// Counter-clockwise rotation by `theta`.
-    pub fn rotate(&self, theta: &AngleWrapped) -> Dq<Real> {
+    pub fn rotate(&self, theta: AngleWrapped) -> Dq<Real> {
         let cos = libm::cosf(theta.radians());
         let sin = libm::sinf(theta.radians());
         let d = self.d();
         let q = self.q();
-        Dq::new(
-            d * cos - q * sin,
-            d * sin + q * cos,
-        )
+        Dq::new(d * cos - q * sin, d * sin + q * cos)
     }
 }
 
@@ -617,7 +605,7 @@ impl Dq<Real> {
 // ---------------------------------------------------------------------------
 
 /// Create a balanced three-phase vector from magnitude and phase angle.
-pub fn make_abc(magnitude: Real, phase: &AngleWrapped) -> Abc<Real> {
+pub fn make_abc(magnitude: Real, phase: AngleWrapped) -> Abc<Real> {
     let angle = phase.radians();
     Abc::new(
         magnitude * libm::cosf(angle),
@@ -627,12 +615,9 @@ pub fn make_abc(magnitude: Real, phase: &AngleWrapped) -> Abc<Real> {
 }
 
 /// Create an αβ vector from magnitude and phase angle.
-pub fn make_alphabeta(magnitude: Real, phase: &AngleWrapped) -> AlphaBeta<Real> {
+pub fn make_alphabeta(magnitude: Real, phase: AngleWrapped) -> AlphaBeta<Real> {
     let angle = phase.radians();
-    AlphaBeta::new(
-        magnitude * libm::cosf(angle),
-        magnitude * libm::sinf(angle),
-    )
+    AlphaBeta::new(magnitude * libm::cosf(angle), magnitude * libm::sinf(angle))
 }
 
 // ---------------------------------------------------------------------------
@@ -640,12 +625,12 @@ pub fn make_alphabeta(magnitude: Real, phase: &AngleWrapped) -> AlphaBeta<Real> 
 // ---------------------------------------------------------------------------
 
 /// 2-D cross product of two αβ vectors (scalar result).
-pub fn cross_product_alphabeta(a: &AlphaBeta<Real>, b: &AlphaBeta<Real>) -> Real {
+pub fn cross_product_alphabeta(a: AlphaBeta<Real>, b: AlphaBeta<Real>) -> Real {
     a.alpha() * b.beta() - a.beta() * b.alpha()
 }
 
 /// 2-D cross product of two dq vectors (scalar result).
-pub fn cross_product_dq(a: &Dq<Real>, b: &Dq<Real>) -> Real {
+pub fn cross_product_dq(a: Dq<Real>, b: Dq<Real>) -> Real {
     a.d() * b.q() - a.q() * b.d()
 }
 
@@ -837,7 +822,7 @@ mod tests {
     fn alphabeta_to_dq_at_zero_angle() {
         let ab = AlphaBeta::new(1.0_f32, 2.0);
         let theta = AngleWrapped::new(0.0);
-        let dq = ab.to_dq(&theta);
+        let dq = ab.to_dq(theta);
         assert!(approx_eq(dq.d(), 1.0));
         assert!(approx_eq(dq.q(), 2.0));
     }
@@ -951,7 +936,7 @@ mod tests {
     fn dq_to_alphabeta_at_zero_angle() {
         let dq = Dq::new(1.0_f32, 2.0);
         let theta = AngleWrapped::new(0.0);
-        let ab = dq.to_alphabeta(&theta);
+        let ab = dq.to_alphabeta(theta);
         assert!(approx_eq(ab.alpha(), 1.0));
         assert!(approx_eq(ab.beta(), 2.0));
     }
@@ -1059,7 +1044,7 @@ mod tests {
     fn roundtrip_alphabeta_dq_alphabeta_at_zero() {
         let ab_orig = AlphaBeta::new(1.0_f32, 2.0);
         let theta = AngleWrapped::new(0.0);
-        let ab_back = ab_orig.to_dq(&theta).to_alphabeta(&theta);
+        let ab_back = ab_orig.to_dq(theta).to_alphabeta(theta);
         assert!(approx_eq(ab_back.alpha(), ab_orig.alpha()));
         assert!(approx_eq(ab_back.beta(), ab_orig.beta()));
     }
@@ -1068,7 +1053,7 @@ mod tests {
     fn roundtrip_alphabeta_dq_alphabeta_at_pi_over_4() {
         let ab_orig = AlphaBeta::new(1.0_f32, 2.0);
         let theta = AngleWrapped::new(PI / 4.0);
-        let ab_back = ab_orig.to_dq(&theta).to_alphabeta(&theta);
+        let ab_back = ab_orig.to_dq(theta).to_alphabeta(theta);
         assert!(approx_eq(ab_back.alpha(), ab_orig.alpha()));
         assert!(approx_eq(ab_back.beta(), ab_orig.beta()));
     }
@@ -1078,7 +1063,7 @@ mod tests {
         let abc_orig = Abc::new(1.0_f32, -0.5, -0.5);
         for &angle in &[0.0, PI / 6.0, PI / 4.0, PI / 3.0, PI / 2.0, PI] {
             let theta = AngleWrapped::new(angle);
-            let abc_back = abc_orig.to_dq(&theta).to_abc(&theta);
+            let abc_back = abc_orig.to_dq(theta).to_abc(theta);
             assert!(
                 approx_eq(abc_back.a(), abc_orig.a()),
                 "a mismatch at angle {}",
@@ -1101,7 +1086,7 @@ mod tests {
 
     #[test]
     fn make_abc_at_zero_phase() {
-        let abc = make_abc(1.0, &AngleWrapped::new(0.0));
+        let abc = make_abc(1.0, AngleWrapped::new(0.0));
         assert!(approx_eq(abc.a(), 1.0));
         assert!(approx_eq(abc.b(), -0.5));
         assert!(approx_eq(abc.c(), -0.5));
@@ -1109,14 +1094,14 @@ mod tests {
 
     #[test]
     fn make_alphabeta_at_zero_phase() {
-        let ab = make_alphabeta(1.0, &AngleWrapped::new(0.0));
+        let ab = make_alphabeta(1.0, AngleWrapped::new(0.0));
         assert!(approx_eq(ab.alpha(), 1.0));
         assert!(approx_eq(ab.beta(), 0.0));
     }
 
     #[test]
     fn make_alphabeta_at_pi_over_2() {
-        let ab = make_alphabeta(1.0, &AngleWrapped::new(PI / 2.0));
+        let ab = make_alphabeta(1.0, AngleWrapped::new(PI / 2.0));
         assert!(approx_eq(ab.alpha(), 0.0));
         assert!(approx_eq(ab.beta(), 1.0));
     }
@@ -1127,16 +1112,16 @@ mod tests {
     fn cross_product_alphabeta_test() {
         let a = AlphaBeta::new(1.0_f32, 0.0);
         let b = AlphaBeta::new(0.0_f32, 1.0);
-        assert!(approx_eq(cross_product_alphabeta(&a, &b), 1.0));
-        assert!(approx_eq(cross_product_alphabeta(&b, &a), -1.0));
+        assert!(approx_eq(cross_product_alphabeta(a, b), 1.0));
+        assert!(approx_eq(cross_product_alphabeta(b, a), -1.0));
     }
 
     #[test]
     fn cross_product_dq_test() {
         let a = Dq::new(1.0_f32, 0.0);
         let b = Dq::new(0.0_f32, 1.0);
-        assert!(approx_eq(cross_product_dq(&a, &b), 1.0));
-        assert!(approx_eq(cross_product_dq(&b, &a), -1.0));
+        assert!(approx_eq(cross_product_dq(a, b), 1.0));
+        assert!(approx_eq(cross_product_dq(b, a), -1.0));
     }
 
     // ---- Rotate tests -----------------------------------------------------
@@ -1144,7 +1129,7 @@ mod tests {
     #[test]
     fn alphabeta_rotate_by_zero() {
         let ab = AlphaBeta::new(1.0_f32, 0.0);
-        let rotated = ab.rotate(&AngleWrapped::new(0.0));
+        let rotated = ab.rotate(AngleWrapped::new(0.0));
         assert!(approx_eq(rotated.alpha(), 1.0));
         assert!(approx_eq(rotated.beta(), 0.0));
     }
@@ -1152,7 +1137,7 @@ mod tests {
     #[test]
     fn alphabeta_rotate_by_pi_over_2() {
         let ab = AlphaBeta::new(1.0_f32, 0.0);
-        let rotated = ab.rotate(&AngleWrapped::new(PI / 2.0));
+        let rotated = ab.rotate(AngleWrapped::new(PI / 2.0));
         assert!(approx_eq(rotated.alpha(), 0.0));
         assert!(approx_eq(rotated.beta(), 1.0));
     }
@@ -1160,7 +1145,7 @@ mod tests {
     #[test]
     fn dq_rotate_by_zero() {
         let dq = Dq::new(1.0_f32, 0.0);
-        let rotated = dq.rotate(&AngleWrapped::new(0.0));
+        let rotated = dq.rotate(AngleWrapped::new(0.0));
         assert!(approx_eq(rotated.d(), 1.0));
         assert!(approx_eq(rotated.q(), 0.0));
     }
@@ -1168,7 +1153,7 @@ mod tests {
     #[test]
     fn dq_rotate_by_pi_over_2() {
         let dq = Dq::new(1.0_f32, 0.0);
-        let rotated = dq.rotate(&AngleWrapped::new(PI / 2.0));
+        let rotated = dq.rotate(AngleWrapped::new(PI / 2.0));
         assert!(approx_eq(rotated.d(), 0.0));
         assert!(approx_eq(rotated.q(), 1.0));
     }

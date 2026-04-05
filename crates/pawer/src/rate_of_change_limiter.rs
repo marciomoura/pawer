@@ -78,27 +78,13 @@ impl RateOfChangeLimiter {
             return;
         }
         let error = input - self.current_output;
-        let change = clamp(
-            error,
-            -self.max_change_per_sample,
-            self.max_change_per_sample,
-        );
+        let change = (error).clamp(-self.max_change_per_sample, self.max_change_per_sample);
         self.current_output += change;
     }
 
     /// Returns the current (rate-limited) output.
     pub fn output(&self) -> Real {
         self.current_output
-    }
-}
-
-fn clamp(value: Real, min: Real, max: Real) -> Real {
-    if value < min {
-        min
-    } else if value > max {
-        max
-    } else {
-        value
     }
 }
 
@@ -110,8 +96,7 @@ mod tests {
     const EPSILON: Real = 1e-5;
 
     fn approx_eq(a: Real, b: Real) -> bool {
-        let diff = if a > b { a - b } else { b - a };
-        diff < EPSILON
+        (a - b).abs() < EPSILON
     }
 
     #[test]

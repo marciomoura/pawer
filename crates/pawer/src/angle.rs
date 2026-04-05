@@ -17,8 +17,8 @@ const U32_TO_RAD_SCALE: Real = TWO_PI / 4_294_967_296.0;
 /// Convert a radian value (any range) to its wrapped `u32` representation.
 fn radians_to_u32(radians: Real) -> u32 {
     let mut normalized = radians;
-    if normalized < 0.0 || normalized >= TWO_PI {
-        normalized = normalized - TWO_PI * libm::floorf(normalized / TWO_PI);
+    if !(0.0..TWO_PI).contains(&normalized) {
+        normalized -= TWO_PI * libm::floorf(normalized / TWO_PI);
     }
     (normalized * RAD_TO_U32_SCALE) as u32
 }
@@ -32,7 +32,7 @@ fn u32_to_radians(value: u32) -> Real {
 
 /// An angle stored as a `u32` that wraps naturally to \[0, 2π) via integer
 /// overflow.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct AngleWrapped {
     value: u32,
 }
@@ -69,14 +69,6 @@ impl AngleWrapped {
     /// work).
     pub fn raw(&self) -> u32 {
         self.value
-    }
-}
-
-// ── Default ──────────────────────────────────────────────────────────────────
-
-impl Default for AngleWrapped {
-    fn default() -> Self {
-        Self { value: 0 }
     }
 }
 

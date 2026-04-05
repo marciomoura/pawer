@@ -4,6 +4,7 @@
 /// the input changes from `false` to `true`; a **falling edge** occurs on the
 /// opposite transition. The detector must be called once per control cycle via
 /// [`update`](EdgeDetector::update).
+#[derive(Default)]
 pub struct EdgeDetector {
     rising_edge: bool,
     falling_edge: bool,
@@ -13,11 +14,7 @@ pub struct EdgeDetector {
 impl EdgeDetector {
     /// Creates a new [`EdgeDetector`] with no prior input history.
     pub fn new() -> Self {
-        Self {
-            rising_edge: false,
-            falling_edge: false,
-            previous_input: false,
-        }
+        Self::default()
     }
 
     /// Processes the current `input` and returns `true` when a rising edge is
@@ -47,12 +44,6 @@ impl EdgeDetector {
         self.rising_edge = false;
         self.falling_edge = false;
         self.previous_input = false;
-    }
-}
-
-impl Default for EdgeDetector {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

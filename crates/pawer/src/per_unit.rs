@@ -1,6 +1,5 @@
 //! SI ↔ per-unit conversion helpers.
 //!
-//! Ported from C++ `per_unit.hpp`.
 //! Per-unit values are obtained by dividing an SI quantity by its base value.
 
 use crate::types::Real;
@@ -35,7 +34,7 @@ mod tests {
     const TOL: f32 = 1e-6;
 
     fn approx_eq(a: f32, b: f32) -> bool {
-        libm::fabsf(a - b) < TOL
+        (a - b).abs() < TOL
     }
 
     #[test]

@@ -1,7 +1,7 @@
 //! 1-D lookup table with linear interpolation.
 //!
-//! Ported from C++ lookup-table utilities. Fixed-size, no-allocation
-//! implementation using const generics — suitable for `no_std` embedded targets.
+//! Fixed-size, no-allocation implementation using const generics — suitable for
+//! `no_std` embedded targets.
 
 use crate::types::Real;
 
@@ -37,7 +37,7 @@ impl<const N: usize> LookupTable1D<N> {
     ///
     /// Values outside the table range are clamped to the first / last entry.
     pub fn get_value(&self, x: Real) -> Real {
-        let x_clamped = clamp(x, self.x_axis[0], self.x_axis[N - 1]);
+        let x_clamped = x.clamp(self.x_axis[0], self.x_axis[N - 1]);
 
         let idx = self.find_lower_index(x_clamped);
 
@@ -59,8 +59,7 @@ impl<const N: usize> LookupTable1D<N> {
     ///
     /// Returns `idx` such that `x_axis[idx] <= x < x_axis[idx + 1]`,
     /// clamped to `[0, N-2]`.
-    fn find_lower_index(&self, x: Real) -> usize {
-        let mut low: usize = 0;
+    fn find_lower_index(&self, x: Real) -> usize {        let mut low: usize = 0;
         let mut high: usize = N - 1;
 
         while low < high {
@@ -76,17 +75,6 @@ impl<const N: usize> LookupTable1D<N> {
     }
 }
 
-#[inline]
-fn clamp(v: Real, min: Real, max: Real) -> Real {
-    if v < min {
-        min
-    } else if v > max {
-        max
-    } else {
-        v
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -97,7 +85,7 @@ mod tests {
     const EPSILON: Real = 1e-6;
 
     fn approx_eq(a: Real, b: Real) -> bool {
-        libm::fabsf(a - b) < EPSILON
+        (a - b).abs() < EPSILON
     }
 
     // -- Simple linear table (y = 2*x) --------------------------------------

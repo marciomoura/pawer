@@ -7,6 +7,7 @@
 /// reaches 0.0, providing hysteresis against noisy boolean signals.
 use crate::types::Real;
 
+#[derive(Default)]
 pub struct BooleanDebouncer {
     sampling_time: Real,
     on_delay_s: Real,
@@ -23,15 +24,7 @@ impl BooleanDebouncer {
     /// Call [`configure_sampling_time`](Self::configure_sampling_time) and
     /// [`configure_delay`](Self::configure_delay) before use.
     pub fn new() -> Self {
-        Self {
-            sampling_time: 0.0,
-            on_delay_s: 0.0,
-            off_delay_s: 0.0,
-            on_increment: 0.0,
-            off_decrement: 0.0,
-            integrator: 0.0,
-            output: false,
-        }
+        Self::default()
     }
 
     /// Sets the control-loop sampling time and recalculates internal
@@ -71,12 +64,7 @@ impl BooleanDebouncer {
         }
 
         // Saturate to [0, 1].
-        if self.integrator > 1.0 {
-            self.integrator = 1.0;
-        }
-        if self.integrator < 0.0 {
-            self.integrator = 0.0;
-        }
+        self.integrator = self.integrator.clamp(0.0, 1.0);
 
         // Hysteresis: output changes only at the saturation boundaries.
         if self.integrator >= 1.0 {
@@ -107,12 +95,6 @@ impl BooleanDebouncer {
     /// Returns the current value of the internal integrator \[0.0, 1.0\].
     pub fn integrator(&self) -> Real {
         self.integrator
-    }
-}
-
-impl Default for BooleanDebouncer {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

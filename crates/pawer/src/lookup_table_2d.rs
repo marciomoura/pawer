@@ -1,7 +1,7 @@
 //! 2-D lookup table with bilinear interpolation.
 //!
-//! Ported from C++ lookup-table utilities. Fixed-size, no-allocation
-//! implementation using const generics — suitable for `no_std` embedded targets.
+//! Fixed-size, no-allocation implementation using const generics — suitable for
+//! `no_std` embedded targets.
 
 use crate::types::Real;
 
@@ -53,8 +53,8 @@ impl<const NX: usize, const NY: usize> LookupTable2D<NX, NY> {
     ///
     /// Coordinates outside the table range are clamped to the edges.
     pub fn get_value(&self, x: Real, y: Real) -> Real {
-        let x_c = clamp(x, self.x_axis[0], self.x_axis[NX - 1]);
-        let y_c = clamp(y, self.y_axis[0], self.y_axis[NY - 1]);
+        let x_c = x.clamp(self.x_axis[0], self.x_axis[NX - 1]);
+        let y_c = y.clamp(self.y_axis[0], self.y_axis[NY - 1]);
 
         let xi = self.find_lower_index_x(x_c);
         let yi = self.find_lower_index_y(y_c);
@@ -117,17 +117,6 @@ impl<const NX: usize, const NY: usize> LookupTable2D<NX, NY> {
     }
 }
 
-#[inline]
-fn clamp(v: Real, min: Real, max: Real) -> Real {
-    if v < min {
-        min
-    } else if v > max {
-        max
-    } else {
-        v
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -138,7 +127,7 @@ mod tests {
     const EPSILON: Real = 1e-6;
 
     fn approx_eq(a: Real, b: Real) -> bool {
-        libm::fabsf(a - b) < EPSILON
+        (a - b).abs() < EPSILON
     }
 
     // -- Flat table (all z = constant) ---------------------------------------

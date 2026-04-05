@@ -5,13 +5,13 @@ use crate::types::Real;
 
 // ── Mathematical constants ───────────────────────────────────────────────────
 
-pub const PI: Real = 3.14159265358979;
+pub const PI: Real = core::f32::consts::PI;
 pub const TWO_PI: Real = 2.0 * PI;
-pub const SQRT_2: Real = 1.41421356237;
-pub const SQRT_3: Real = 1.73205080757;
+pub const SQRT_2: Real = core::f32::consts::SQRT_2;
+pub const SQRT_3: Real = 1.732_050_8;
 pub const SQRT_3_OVER_2: Real = SQRT_3 / 2.0;
 pub const TWO_THIRDS: Real = 2.0 / 3.0;
-pub const SQRT_TWO_THIRDS: Real = 0.81649658092;
+pub const SQRT_TWO_THIRDS: Real = 0.816_496_6;
 
 // ── Voltage / current scaling factors ────────────────────────────────────────
 

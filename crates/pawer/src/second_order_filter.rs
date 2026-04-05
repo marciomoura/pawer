@@ -266,6 +266,7 @@ mod tests {
 
     const TS: Real = 0.0001; // 10 kHz sampling
     const EPS: Real = 1e-2;
+    const BUTTERWORTH_Q: f64 = core::f64::consts::FRAC_1_SQRT_2;
 
     fn approx_eq(a: Real, b: Real) -> bool {
         (a - b).abs() < EPS
@@ -276,7 +277,7 @@ mod tests {
     #[test]
     fn lpf_dc_passes_through() {
         let mut f = SecondOrderLowPassFilter::new(TS);
-        f.configure(500.0, 0.7071);
+        f.configure(500.0, BUTTERWORTH_Q);
         for _ in 0..20_000 {
             f.update(1.0);
         }
@@ -290,7 +291,7 @@ mod tests {
     #[test]
     fn lpf_high_freq_attenuation() {
         let mut f = SecondOrderLowPassFilter::new(TS);
-        f.configure(50.0, 0.7071); // low cutoff
+        f.configure(50.0, BUTTERWORTH_Q); // low cutoff
         // Alternating +1/-1 is at Nyquist — should be heavily attenuated
         for i in 0..5000 {
             let input = if i % 2 == 0 { 1.0 } else { -1.0 };
@@ -306,7 +307,7 @@ mod tests {
     #[test]
     fn lpf_reset_to_value() {
         let mut f = SecondOrderLowPassFilter::new(TS);
-        f.configure(100.0, 0.7071);
+        f.configure(100.0, BUTTERWORTH_Q);
         f.update(5.0);
         f.reset_to(3.0);
         assert!(approx_eq(f.output(), 3.0));
@@ -315,7 +316,7 @@ mod tests {
     #[test]
     fn lpf_reset_to_zero() {
         let mut f = SecondOrderLowPassFilter::new(TS);
-        f.configure(100.0, 0.7071);
+        f.configure(100.0, BUTTERWORTH_Q);
         for _ in 0..100 {
             f.update(10.0);
         }
@@ -326,7 +327,7 @@ mod tests {
     #[test]
     fn lpf_step_response_rises_gradually() {
         let mut f = SecondOrderLowPassFilter::new(TS);
-        f.configure(100.0, 0.7071);
+        f.configure(100.0, BUTTERWORTH_Q);
         f.update(1.0);
         let first = f.output();
         assert!(first > 0.0 && first < 1.0);
@@ -369,11 +370,7 @@ mod tests {
             let input = libm::sin(omega * t) as Real;
             f.update(input);
             if k > 15_000 {
-                let abs = if f.output() < 0.0 {
-                    -f.output()
-                } else {
-                    f.output()
-                };
+                let abs = f.output().abs();
                 if abs > max_out {
                     max_out = abs;
                 }
@@ -402,7 +399,7 @@ mod tests {
     #[test]
     fn hpf_dc_blocked() {
         let mut f = SecondOrderHighPassFilter::new(TS);
-        f.configure(500.0, 0.7071);
+        f.configure(500.0, BUTTERWORTH_Q);
         for _ in 0..20_000 {
             f.update(1.0);
         }
@@ -412,7 +409,7 @@ mod tests {
     #[test]
     fn hpf_passes_high_frequency() {
         let mut f = SecondOrderHighPassFilter::new(TS);
-        f.configure(50.0, 0.7071); // low cutoff — passes most frequencies
+        f.configure(50.0, BUTTERWORTH_Q); // low cutoff — passes most frequencies
 
         // Feed a high-frequency sine well above cutoff
         let freq_hz = 2000.0;
@@ -423,11 +420,7 @@ mod tests {
             let input = libm::sin(omega * t) as Real;
             f.update(input);
             if k > 5_000 {
-                let abs = if f.output() < 0.0 {
-                    -f.output()
-                } else {
-                    f.output()
-                };
+                let abs = f.output().abs();
                 if abs > max_out {
                     max_out = abs;
                 }
@@ -443,7 +436,7 @@ mod tests {
     #[test]
     fn hpf_reset_works() {
         let mut f = SecondOrderHighPassFilter::new(TS);
-        f.configure(100.0, 0.7071);
+        f.configure(100.0, BUTTERWORTH_Q);
         for _ in 0..100 {
             f.update(5.0);
         }
@@ -454,7 +447,7 @@ mod tests {
     #[test]
     fn hpf_reset_to_value() {
         let mut f = SecondOrderHighPassFilter::new(TS);
-        f.configure(100.0, 0.7071);
+        f.configure(100.0, BUTTERWORTH_Q);
         f.reset_to(7.0);
         assert!(approx_eq(f.output(), 7.0));
     }

@@ -35,3 +35,4 @@ pub mod lookup_table_2d;
 
 // Controllers
 pub mod pi_controller;
+pub mod srf_pll;

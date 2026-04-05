@@ -17,6 +17,10 @@ pub enum Command {
     Signals,
     /// List all parameters and their values.
     Params,
+    /// Show the latest value of all or selected signals.
+    Snapshot(Vec<String>),
+    /// Configure display notation and/or precision.
+    Format(FormatArgs),
     /// Print help text.
     Help,
     /// Exit the REPL.
@@ -35,6 +39,12 @@ pub enum SimulateArg {
 pub struct PlotArgs {
     pub signals: Vec<String>,
     pub output: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FormatArgs {
+    pub notation: Option<String>,
+    pub precision: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -80,10 +90,15 @@ pub fn parse(input: &str) -> Result<Command, ParseError> {
         "/status" => Ok(Command::Status),
         "/signals" | "/sigs" => Ok(Command::Signals),
         "/params" => Ok(Command::Params),
+        "/snapshot" | "/snap" => Ok(Command::Snapshot(args.iter().map(|s| s.to_string()).collect())),
+        "/format" | "/fmt" => parse_format(&args),
         "/help" | "/h" | "/?" => Ok(Command::Help),
         "/quit" | "/exit" | "/q" => Ok(Command::Quit),
         other => Err(ParseError {
-            message: format!("Unknown command \"{}\". Type /help for available commands.", other),
+            message: format!(
+                "Unknown command \"{}\". Type /help for available commands.",
+                other
+            ),
         }),
     }
 }
@@ -98,14 +113,20 @@ fn parse_simulate(args: &[&str]) -> Result<Command, ParseError> {
     let arg = args[0];
 
     // Check for "Nsteps" suffix
-    if let Some(n_str) = arg.strip_suffix("steps").or_else(|| arg.strip_suffix("s").filter(|s| s.ends_with("step"))) {
+    if let Some(n_str) = arg
+        .strip_suffix("steps")
+        .or_else(|| arg.strip_suffix("s").filter(|s| s.ends_with("step")))
+    {
         let n_str = n_str.strip_suffix("step").unwrap_or(n_str);
         match n_str.parse::<u64>() {
             Ok(n) if n > 0 => return Ok(Command::Simulate(SimulateArg::Steps(n))),
             _ => {
                 return Err(ParseError {
-                    message: format!("Invalid step count \"{}\". Must be a positive integer.", arg),
-                })
+                    message: format!(
+                        "Invalid step count \"{}\". Must be a positive integer.",
+                        arg
+                    ),
+                });
             }
         }
     }
@@ -140,7 +161,7 @@ fn parse_plot(args: &[&str]) -> Result<Command, ParseError> {
                 None => {
                     return Err(ParseError {
                         message: "Expected file path after -o flag.".into(),
-                    })
+                    });
                 }
             }
         } else {
@@ -180,6 +201,39 @@ fn parse_save(args: &[&str]) -> Result<Command, ParseError> {
         });
     }
     Ok(Command::Save(args[0].to_owned()))
+}
+
+fn parse_format(args: &[&str]) -> Result<Command, ParseError> {
+    if args.is_empty() {
+        // No args → show current format (handled by command executor)
+        return Ok(Command::Format(FormatArgs { notation: None, precision: None }));
+    }
+
+    let mut notation = None;
+    let mut precision = None;
+
+    for &arg in args {
+        match arg {
+            "default" | "fixed" | "scientific" | "sci" => {
+                notation = Some(arg.to_owned());
+            }
+            _ => {
+                match arg.parse::<usize>() {
+                    Ok(p) => precision = Some(p),
+                    Err(_) => {
+                        return Err(ParseError {
+                            message: format!(
+                                "Invalid format argument \"{}\". Use: /format [default|fixed|scientific] [precision]",
+                                arg
+                            ),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(Command::Format(FormatArgs { notation, precision }))
 }
 
 #[cfg(test)]
@@ -247,12 +301,31 @@ mod tests {
         assert_eq!(parse("/signals").unwrap(), Command::Signals);
         assert_eq!(parse("/help").unwrap(), Command::Help);
         assert_eq!(parse("/quit").unwrap(), Command::Quit);
+        assert_eq!(parse("/snapshot").unwrap(), Command::Snapshot(vec![]));
+    }
+
+    #[test]
+    fn parse_snapshot_with_signals() {
+        assert_eq!(
+            parse("/snapshot freq_hz dq_d").unwrap(),
+            Command::Snapshot(vec!["freq_hz".into(), "dq_d".into()])
+        );
+        assert_eq!(
+            parse("/snap freq_hz").unwrap(),
+            Command::Snapshot(vec!["freq_hz".into()])
+        );
     }
 
     #[test]
     fn parse_aliases() {
-        assert_eq!(parse("/sim 0.1").unwrap(), Command::Simulate(SimulateArg::Duration(0.1)));
-        assert_eq!(parse("/run 0.1").unwrap(), Command::Simulate(SimulateArg::Duration(0.1)));
+        assert_eq!(
+            parse("/sim 0.1").unwrap(),
+            Command::Simulate(SimulateArg::Duration(0.1))
+        );
+        assert_eq!(
+            parse("/run 0.1").unwrap(),
+            Command::Simulate(SimulateArg::Duration(0.1))
+        );
         assert_eq!(parse("/sigs").unwrap(), Command::Signals);
         assert_eq!(parse("/exit").unwrap(), Command::Quit);
         assert_eq!(parse("/q").unwrap(), Command::Quit);

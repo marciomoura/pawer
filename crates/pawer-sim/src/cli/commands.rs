@@ -1,11 +1,12 @@
-use crate::cli::parser::{Command, PlotArgs, SimulateArg};
+use crate::cli::parser::{Command, FormatArgs, PlotArgs, SimulateArg};
+use crate::cli::{DisplayFormat, Notation};
 use crate::engine::Engine;
 use crate::export;
 use crate::plotter;
 
 /// Execute a parsed command against the simulation engine.
 /// Returns `true` if the REPL should continue, `false` to quit.
-pub fn execute(cmd: Command, engine: &mut Engine) -> bool {
+pub fn execute(cmd: Command, engine: &mut Engine, display: &mut DisplayFormat) -> bool {
     match cmd {
         Command::Simulate(arg) => cmd_simulate(engine, arg),
         Command::Plot(args) => cmd_plot(engine, args),
@@ -15,6 +16,8 @@ pub fn execute(cmd: Command, engine: &mut Engine) -> bool {
         Command::Status => cmd_status(engine),
         Command::Signals => cmd_signals(engine),
         Command::Params => cmd_params(engine),
+        Command::Snapshot(names) => cmd_snapshot(engine, &names, display),
+        Command::Format(args) => cmd_format(display, args),
         Command::Help => cmd_help(),
         Command::Quit => return false,
     }
@@ -102,6 +105,44 @@ fn cmd_params(engine: &Engine) {
     }
 }
 
+fn cmd_snapshot(engine: &Engine, names: &[String], display: &DisplayFormat) {
+    let entries = engine.snapshot(names);
+    if entries.is_empty() {
+        println!("  No signals available. Run /simulate first.");
+        return;
+    }
+    let max_len = entries.iter().map(|(n, _)| n.len()).max().unwrap_or(0);
+    for (name, value) in &entries {
+        match value {
+            Some(v) => println!("  {:width$} = {}", name, display.fmt(*v), width = max_len),
+            None => println!("  {:width$} = (no data)", name, width = max_len),
+        }
+    }
+}
+
+fn cmd_format(display: &mut DisplayFormat, args: FormatArgs) {
+    if args.notation.is_none() && args.precision.is_none() {
+        println!("  notation  = {}", display.notation);
+        println!("  precision = {}", display.precision);
+        return;
+    }
+
+    if let Some(ref notation) = args.notation {
+        display.notation = match notation.as_str() {
+            "default" => Notation::Default,
+            "fixed" => Notation::Fixed,
+            "scientific" | "sci" => Notation::Scientific,
+            _ => unreachable!(),
+        };
+    }
+    if let Some(precision) = args.precision {
+        display.precision = precision;
+    }
+
+    println!("  notation  = {}", display.notation);
+    println!("  precision = {}", display.precision);
+}
+
 fn cmd_help() {
     println!(
         r#"
@@ -118,6 +159,14 @@ fn cmd_help() {
 
     /save <file.csv>         Export logged data to CSV
     /export                  Alias for /save
+
+    /snapshot [sig1 ...]     Show latest value of all or selected signals
+    /snap                    Alias for /snapshot
+
+    /format [notation] [N]   Show or set display format for /snapshot
+    /fmt                     Alias for /format
+                             Notations: default, fixed, scientific (sci)
+                             Examples: /format fixed 6, /format sci 3
 
     /reset                   Reset simulation to t=0
     /status                  Show current simulation state

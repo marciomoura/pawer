@@ -1,11 +1,59 @@
 pub mod commands;
 pub mod parser;
 
-use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
+use rustyline::error::ReadlineError;
 
 use crate::engine::Engine;
 use crate::scenario::Scenario;
+
+/// Controls how numeric values are printed in the CLI.
+#[derive(Clone, Debug)]
+pub struct DisplayFormat {
+    pub notation: Notation,
+    pub precision: usize,
+}
+
+/// Notation style for numeric display.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Notation {
+    /// Rust default `Display` (`50.123`).
+    Default,
+    /// Fixed-point (`50.123000`).
+    Fixed,
+    /// Scientific (`5.012300e1`).
+    Scientific,
+}
+
+impl Default for DisplayFormat {
+    fn default() -> Self {
+        Self {
+            notation: Notation::Fixed,
+            precision: 4,
+        }
+    }
+}
+
+impl DisplayFormat {
+    /// Format a value according to the current settings.
+    pub fn fmt(&self, v: f32) -> String {
+        match self.notation {
+            Notation::Default => format!("{}", v),
+            Notation::Fixed => format!("{:.prec$}", v, prec = self.precision),
+            Notation::Scientific => format!("{:.prec$e}", v, prec = self.precision),
+        }
+    }
+}
+
+impl std::fmt::Display for Notation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Notation::Default => write!(f, "default"),
+            Notation::Fixed => write!(f, "fixed"),
+            Notation::Scientific => write!(f, "scientific"),
+        }
+    }
+}
 
 /// Interactive simulation CLI.
 ///
@@ -21,6 +69,7 @@ use crate::scenario::Scenario;
 /// ```
 pub struct SimCli {
     engine: Engine,
+    display: DisplayFormat,
 }
 
 impl SimCli {
@@ -28,6 +77,7 @@ impl SimCli {
     pub fn new(scenario: Box<dyn Scenario>, dt: f64) -> Self {
         Self {
             engine: Engine::new(scenario, dt),
+            display: DisplayFormat::default(),
         }
     }
 
@@ -55,7 +105,7 @@ impl SimCli {
 
                     match parser::parse(&line) {
                         Ok(cmd) => {
-                            if !commands::execute(cmd, &mut self.engine) {
+                            if !commands::execute(cmd, &mut self.engine, &mut self.display) {
                                 println!("  Goodbye.");
                                 break;
                             }
@@ -79,7 +129,10 @@ impl SimCli {
 fn print_banner(dt: f64) {
     println!();
     println!("  ╔══════════════════════════════════════════╗");
-    println!("  ║            pawer-sim  v{}            ║", env!("CARGO_PKG_VERSION"));
+    println!(
+        "  ║            pawer-sim  v{}            ║",
+        env!("CARGO_PKG_VERSION")
+    );
     println!("  ║   Interactive Simulation Environment     ║");
     println!("  ╚══════════════════════════════════════════╝");
     println!();

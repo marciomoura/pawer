@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "crates/pawer",
+    "crates/pawer-sim",
+]
+resolver = "2"

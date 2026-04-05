@@ -44,7 +44,10 @@ fn cmd_plot(engine: &Engine, args: PlotArgs) {
     let available = engine.signal_names();
     for name in &args.signals {
         if !available.contains(name) {
-            println!("  Error: unknown signal \"{}\". Use /signals to list available signals.", name);
+            println!(
+                "  Error: unknown signal \"{}\". Use /signals to list available signals.",
+                name
+            );
             return;
         }
     }

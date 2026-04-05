@@ -40,12 +40,12 @@ impl OffDelay {
             self.sample_counter = 0;
             self.output = true;
         } else if self.output {
-                self.sample_counter += 1;
-                if self.sample_counter >= self.samples_required {
-                    self.output = false;
-                }
+            self.sample_counter += 1;
+            if self.sample_counter >= self.samples_required {
+                self.output = false;
+            }
         } else {
-                self.sample_counter = 0;
+            self.sample_counter = 0;
         }
     }
 

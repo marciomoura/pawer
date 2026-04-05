@@ -68,7 +68,7 @@
 /// | `base_voltage`      | 325.0   | V    | Base peak phase voltage            |
 /// | `base_current`      | 100.0   | A    | Base peak current                  |
 use pawer::constants::TWO_PI;
-use pawer::srf_pll::{SrfPll, GAINS_50HZ_CROSSOVER};
+use pawer::srf_pll::{GAINS_50HZ_CROSSOVER, SrfPll};
 use pawer::types::Real;
 use pawer_examples::grid_current_controller::GridCurrentController;
 use pawer_examples::grid_model::GridModel;
@@ -79,8 +79,8 @@ use pawer::frames::Dq;
 const SAMPLING_TIME: f64 = 100e-6; // 10 kHz
 
 // Default SI plant parameters (used to compute default pu values)
-const DEFAULT_R_SI: Real = 0.1;    // 0.1 Ω
-const DEFAULT_L_SI: Real = 2e-3;   // 2 mH
+const DEFAULT_R_SI: Real = 0.1; // 0.1 Ω
+const DEFAULT_L_SI: Real = 2e-3; // 2 mH
 const DEFAULT_V_BASE: Real = 325.0; // V peak (≈ 230 Vrms)
 const DEFAULT_I_BASE: Real = 100.0; // A peak
 const DEFAULT_FREQ_HZ: Real = 50.0;
@@ -127,15 +127,32 @@ impl PuBases {
         let z_base = v_base / i_base;
         let omega_base = TWO_PI * freq_hz;
         let l_base = z_base / omega_base;
-        Self { v_base, i_base, z_base, l_base }
+        Self {
+            v_base,
+            i_base,
+            z_base,
+            l_base,
+        }
     }
 
-    fn r_to_si(&self, r_pu: Real) -> Real { r_pu * self.z_base }
-    fn l_to_si(&self, l_pu: Real) -> Real { l_pu * self.l_base }
-    fn v_to_si(&self, v_pu: Real) -> Real { v_pu * self.v_base }
-    fn i_to_si(&self, i_pu: Real) -> Real { i_pu * self.i_base }
-    fn v_to_pu(&self, v_si: Real) -> Real { v_si / self.v_base }
-    fn i_to_pu(&self, i_si: Real) -> Real { i_si / self.i_base }
+    fn r_to_si(&self, r_pu: Real) -> Real {
+        r_pu * self.z_base
+    }
+    fn l_to_si(&self, l_pu: Real) -> Real {
+        l_pu * self.l_base
+    }
+    fn v_to_si(&self, v_pu: Real) -> Real {
+        v_pu * self.v_base
+    }
+    fn i_to_si(&self, i_pu: Real) -> Real {
+        i_pu * self.i_base
+    }
+    fn v_to_pu(&self, v_si: Real) -> Real {
+        v_si / self.v_base
+    }
+    fn i_to_pu(&self, i_si: Real) -> Real {
+        i_si / self.i_base
+    }
 }
 
 // ── Scenario state ────────────────────────────────────────────────────────────
@@ -183,7 +200,7 @@ impl Scenario for GridConnectedCurrentControl {
         ctx.set_param("i_d_ref", 0.0);
         ctx.set_param("i_q_ref", 0.0);
         ctx.set_param("grid_freq_hz", DEFAULT_FREQ_HZ as f64);
-        ctx.set_param("grid_amplitude", 1.0);    // 1.0 pu
+        ctx.set_param("grid_amplitude", 1.0); // 1.0 pu
         ctx.set_param("resistance", r_pu as f64);
         ctx.set_param("inductance", l_pu as f64);
         ctx.set_param("enable_decoupling", 1.0);
@@ -214,7 +231,8 @@ impl Scenario for GridConnectedCurrentControl {
 
         // Configure PLL
         self.pll.configure_nominal_frequency(DEFAULT_FREQ_HZ);
-        self.pll.configure_pi_controller(GAINS_50HZ_CROSSOVER.kp, GAINS_50HZ_CROSSOVER.ti);
+        self.pll
+            .configure_pi_controller(GAINS_50HZ_CROSSOVER.kp, GAINS_50HZ_CROSSOVER.ti);
         self.pll.reset_with_frequency(1.0);
     }
 
@@ -273,7 +291,10 @@ impl Scenario for GridConnectedCurrentControl {
         ctx.log_id(self.sigs.v_grid_d, self.bases.v_to_pu(v_grid_dq.d()));
         ctx.log_id(self.sigs.v_grid_q, self.bases.v_to_pu(v_grid_dq.q()));
         ctx.log_id(self.sigs.pll_freq_hz, self.pll.estimated_frequency_hz());
-        ctx.log_id(self.sigs.pll_angle_rad, self.pll.estimated_angle_phase_a().radians());
+        ctx.log_id(
+            self.sigs.pll_angle_rad,
+            self.pll.estimated_angle_phase_a().radians(),
+        );
     }
 
     fn on_param_change(&mut self, name: &str, value: f64, ctx: &SimContext) {
@@ -297,7 +318,8 @@ impl Scenario for GridConnectedCurrentControl {
 
                 // Reapply grid amplitude (pu → SI)
                 let amp_pu = ctx.param("grid_amplitude");
-                self.grid.set_grid_amplitude(self.bases.v_to_si(amp_pu) as f64);
+                self.grid
+                    .set_grid_amplitude(self.bases.v_to_si(amp_pu) as f64);
             }
             "grid_amplitude" => {
                 let amp_si = self.bases.v_to_si(value as Real);

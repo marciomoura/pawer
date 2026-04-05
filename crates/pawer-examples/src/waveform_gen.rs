@@ -109,7 +109,10 @@ impl ThreePhaseGenerator {
     /// Schedule a one-shot frequency step: `delta_hz` is added to the
     /// current frequency when the simulation time reaches `time`.
     pub fn schedule_frequency_step(&mut self, delta_hz: f64, time: f64) {
-        self.freq_step = Some(Step { delta: delta_hz, time });
+        self.freq_step = Some(Step {
+            delta: delta_hz,
+            time,
+        });
     }
 
     /// Schedule a linear frequency ramp.
@@ -118,7 +121,11 @@ impl ThreePhaseGenerator {
     /// interval `[start_time, end_time]`.
     pub fn schedule_frequency_ramp(&mut self, delta_hz: f64, start_time: f64, end_time: f64) {
         assert!(end_time > start_time, "Ramp end must be after start");
-        self.freq_ramp = Some(Ramp { delta: delta_hz, start: start_time, end: end_time });
+        self.freq_ramp = Some(Ramp {
+            delta: delta_hz,
+            start: start_time,
+            end: end_time,
+        });
     }
 
     /// Schedule a one-shot amplitude step: `delta` is added to the
@@ -168,27 +175,28 @@ impl ThreePhaseGenerator {
     // ── Private helpers ───────────────────────────────────────────────────
 
     fn apply_steps(&mut self) {
-        if let Some(s) = self.freq_step {
-            if self.is_step_time(s.time) {
-                self.frequency += s.delta;
-                self.freq_step = None;
-            }
+        if let Some(s) = self.freq_step
+            && self.is_step_time(s.time)
+        {
+            self.frequency += s.delta;
+            self.freq_step = None;
         }
 
-        if let Some(s) = self.amplitude_step {
-            if self.is_step_time(s.time) {
-                self.amplitude += s.delta;
-                self.amplitude_step = None;
-            }
+        if let Some(s) = self.amplitude_step
+            && self.is_step_time(s.time)
+        {
+            self.amplitude += s.delta;
+            self.amplitude_step = None;
         }
     }
 
     fn apply_ramps(&mut self) {
-        if let Some(r) = self.freq_ramp {
-            if self.simulation_time >= r.start && self.simulation_time <= r.end {
-                let increment = r.delta * self.sampling_time / (r.end - r.start);
-                self.frequency += increment;
-            }
+        if let Some(r) = self.freq_ramp
+            && self.simulation_time >= r.start
+            && self.simulation_time <= r.end
+        {
+            let increment = r.delta * self.sampling_time / (r.end - r.start);
+            self.frequency += increment;
         }
     }
 

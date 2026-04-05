@@ -129,7 +129,10 @@ impl Scenario for GridModelScenario {
             self.sigs.i_magnitude,
             (i.alpha() * i.alpha() + i.beta() * i.beta()).sqrt(),
         );
-        ctx.log_id(self.sigs.grid_freq_hz, self.grid.voltage_source().frequency() as Real);
+        ctx.log_id(
+            self.sigs.grid_freq_hz,
+            self.grid.voltage_source().frequency() as Real,
+        );
         ctx.log_id(self.sigs.inv_freq_hz, self.inverter.frequency() as Real);
     }
 

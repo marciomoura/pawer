@@ -59,8 +59,8 @@ cargo fmt --check
 ### `crates/pawer-sim` (SIL simulation, std)
 
 - `std` is available; dynamic allocation (`Vec`, etc.) is allowed here.
-- Depends on `pawer` via `{ path = "../pawer" }`.
-- Intended for: running simulation loops, capturing time-series waveforms, computing performance metrics (THD, rise time, settling time, overshoot), and building test harnesses around `pawer` blocks.
+- **No dependency on `pawer`** — `pawer-sim` is generic over any discrete-time system. Users wire `pawer` blocks (or their own code) into `pawer-sim` harnesses themselves.
+- Intended for: running simulation loops, capturing time-series waveforms, computing performance metrics (overshoot, settling time, rise time, control tracking error, fault detection response), and building closed-loop test harnesses.
 - Not intended to be flashed to a target — host execution only.
 
 ## Domain Conventions

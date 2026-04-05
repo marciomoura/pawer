@@ -2,11 +2,10 @@
 name = "pawer-sim"
 version = "0.1.0"
 edition = "2024"
-description = "Software-in-the-loop simulation support library for pawer-based control algorithms"
-keywords = ["embedded", "simulation", "power-electronics", "control", "sil"]
+description = "Software-in-the-loop simulation utilities for evaluating time-dependent performance of discrete-time control algorithms"
+keywords = ["simulation", "control", "testing", "power-electronics", "sil"]
 categories = ["simulation", "science", "development-tools::testing"]
 
 [dependencies]
-pawer = { path = "../pawer" }
 
 [dev-dependencies]

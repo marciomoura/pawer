@@ -168,27 +168,28 @@ impl ThreePhaseGenerator {
     // ── Private helpers ───────────────────────────────────────────────────
 
     fn apply_steps(&mut self) {
-        if let Some(s) = self.freq_step {
-            if self.is_step_time(s.time) {
-                self.frequency += s.delta;
-                self.freq_step = None;
-            }
+        if let Some(s) = self.freq_step
+            && self.is_step_time(s.time)
+        {
+            self.frequency += s.delta;
+            self.freq_step = None;
         }
 
-        if let Some(s) = self.amplitude_step {
-            if self.is_step_time(s.time) {
-                self.amplitude += s.delta;
-                self.amplitude_step = None;
-            }
+        if let Some(s) = self.amplitude_step
+            && self.is_step_time(s.time)
+        {
+            self.amplitude += s.delta;
+            self.amplitude_step = None;
         }
     }
 
     fn apply_ramps(&mut self) {
-        if let Some(r) = self.freq_ramp {
-            if self.simulation_time >= r.start && self.simulation_time <= r.end {
-                let increment = r.delta * self.sampling_time / (r.end - r.start);
-                self.frequency += increment;
-            }
+        if let Some(r) = self.freq_ramp
+            && self.simulation_time >= r.start
+            && self.simulation_time <= r.end
+        {
+            let increment = r.delta * self.sampling_time / (r.end - r.start);
+            self.frequency += increment;
         }
     }
 

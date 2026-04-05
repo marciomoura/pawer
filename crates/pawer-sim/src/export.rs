@@ -12,7 +12,9 @@ use crate::logger::Logger;
 /// 0.001,1.24,4.57,...
 /// ```
 ///
-/// Signals that were not logged for a given step produce an empty cell.
+/// Registered signals come first (in registration order), then any ad-hoc
+/// signals in alphabetical order. Signals not logged for a given step
+/// produce an empty cell.
 pub fn export_csv(logger: &Logger, path: &str) -> Result<u64, ExportError> {
     let file = std::fs::File::create(Path::new(path))
         .map_err(|e| ExportError(format!("Failed to create file \"{}\": {}", path, e)))?;
@@ -23,6 +25,8 @@ pub fn export_csv(logger: &Logger, path: &str) -> Result<u64, ExportError> {
     if signal_names.is_empty() {
         return Err(ExportError("No signals to export.".into()));
     }
+
+    let registered = logger.registered_names();
 
     // Header row
     let mut header = vec!["time".to_owned()];
@@ -36,9 +40,18 @@ pub fn export_csv(logger: &Logger, path: &str) -> Result<u64, ExportError> {
     for record in records {
         let mut row = vec![format!("{:.6e}", record.time)];
         for name in &signal_names {
-            match record.signals.get(name) {
-                Some(v) => row.push(format!("{:.6e}", v)),
-                None => row.push(String::new()),
+            // Check registered signals first (by position)
+            if let Some(idx) = registered.iter().position(|n| n == name) {
+                match record.registered.get(idx) {
+                    Some(v) => row.push(format!("{:.6e}", v)),
+                    None => row.push(String::new()),
+                }
+            } else {
+                // Ad-hoc signal
+                match record.adhoc.get(name) {
+                    Some(v) => row.push(format!("{:.6e}", v)),
+                    None => row.push(String::new()),
+                }
             }
         }
         writer

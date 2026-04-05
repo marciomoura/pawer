@@ -30,6 +30,9 @@ impl Engine {
     /// Initialize (or re-initialize) the scenario.
     pub fn init(&mut self) {
         self.scenario.init(&mut self.ctx);
+        // Freeze registered signal names into the logger
+        self.logger
+            .set_registered_names(self.ctx.registered_signal_names().to_vec());
         self.initialized = true;
     }
 
@@ -39,8 +42,9 @@ impl Engine {
             self.init();
         }
         self.scenario.step(&mut self.ctx);
-        let buffer = self.ctx.take_step_buffer();
-        self.logger.record(self.ctx.time(), buffer);
+        let data = self.ctx.take_step_data();
+        self.logger
+            .record(self.ctx.time(), data.registered, data.adhoc);
         self.ctx.advance_time();
         self.step_count += 1;
     }
@@ -66,6 +70,7 @@ impl Engine {
     pub fn reset(&mut self) {
         self.ctx.reset_time();
         self.ctx.clear_params();
+        self.ctx.clear_signals();
         self.logger.reset();
         self.step_count = 0;
         self.initialized = false;
@@ -97,6 +102,11 @@ impl Engine {
         self.logger.signal_names()
     }
 
+    /// Snapshot the latest value of the requested signals (or all if empty).
+    pub fn snapshot(&self, names: &[String]) -> Vec<(String, Option<pawer::types::Real>)> {
+        self.logger.snapshot(names)
+    }
+
     /// List all parameter names and values.
     pub fn params(&self) -> Vec<(String, f64)> {
         let names = self.ctx.param_names();
@@ -109,8 +119,9 @@ impl Engine {
             .collect()
     }
 
-    /// Set a parameter value on the context.
+    /// Set a parameter value and notify the scenario via `on_param_change`.
     pub fn set_param(&mut self, name: &str, value: f64) {
         self.ctx.set_param(name, value);
+        self.scenario.on_param_change(name, value, &self.ctx);
     }
 }

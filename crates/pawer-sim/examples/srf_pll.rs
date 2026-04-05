@@ -14,28 +14,27 @@
 /// /simulate 0.5              # PLL locks at 50 Hz
 /// /plot freq_hz gen_freq_hz dq_d dq_q
 ///
-/// /set freq_step 10.0        # step to 60 Hz — fires immediately (t >= freq_step_at=0.5)
+/// /set freq_step 10.0        # on_param_change reacts: generator → 60 Hz
 /// /simulate 0.5              # observe re-lock
 /// /plot freq_hz gen_freq_hz dq_d dq_q
 ///
 /// /reset
-/// /set freq_step 10.0        # same step, but deferred
-/// /set freq_step_at 1.5      # step fires at t = 1.5 s
-/// /simulate 3.0              # lock, step, re-lock in one run
+/// /set nominal_hz 60.0       # event-driven: instantly reconfigures PLL + generator
+/// /simulate 1.0
 /// /plot freq_hz gen_freq_hz
 ///
 /// /save results.csv
 /// /quit
 /// ```
 ///
-/// All parameters can be changed at any point and take effect immediately:
+/// All parameters can be changed at any point and take effect immediately
+/// via the `on_param_change` callback — no if-else logic in `step()`.
 ///
 /// | Parameter      | Default | Meaning                                      |
 /// |----------------|---------|----------------------------------------------|
 /// | `nominal_hz`   | 50.0    | Base signal frequency (Hz)                   |
 /// | `amplitude`    | 1.0     | Peak amplitude (pu)                          |
-/// | `freq_step`    | 0.0     | Frequency delta applied at `freq_step_at`    |
-/// | `freq_step_at` | 0.5     | Absolute simulation time for the step (s)    |
+/// | `freq_step`    | 0.0     | Frequency delta added to nominal (Hz)        |
 use pawer::constants::TWO_PI;
 use pawer::srf_pll::{SrfPll, GAINS_50HZ_CROSSOVER};
 use pawer::types::Real;
@@ -45,11 +44,28 @@ use pawer_sim::waveform_gen::ThreePhaseGenerator;
 const NOMINAL_HZ: f64 = 50.0;
 const SAMPLING_TIME: f64 = 100e-6; // 10 kHz
 
+// ── Signal handles ────────────────────────────────────────────────────────────
+
+#[derive(Default)]
+struct Signals {
+    freq_hz: SignalId,
+    freq_pu: SignalId,
+    omega_rad_s: SignalId,
+    dq_d: SignalId,
+    dq_q: SignalId,
+    angle_pu: SignalId,
+    angle_rad: SignalId,
+    signal_alpha: SignalId,
+    signal_beta: SignalId,
+    gen_freq_hz: SignalId,
+}
+
 // ── Scenario state ────────────────────────────────────────────────────────────
 
 struct SrfPllScenario {
     pll: SrfPll,
     wgen: ThreePhaseGenerator,
+    sigs: Signals,
 }
 
 impl SrfPllScenario {
@@ -57,6 +73,7 @@ impl SrfPllScenario {
         Self {
             pll: SrfPll::new(SAMPLING_TIME as Real),
             wgen: ThreePhaseGenerator::new(SAMPLING_TIME),
+            sigs: Signals::default(),
         }
     }
 }
@@ -65,11 +82,24 @@ impl SrfPllScenario {
 
 impl Scenario for SrfPllScenario {
     fn init(&mut self, ctx: &mut SimContext) {
+        // Parameters
         ctx.set_param("nominal_hz", NOMINAL_HZ);
         ctx.set_param("amplitude", 1.0);
-        ctx.set_param("freq_step", 0.0);    // +Hz added after freq_step_at
-        ctx.set_param("freq_step_at", 0.5); // absolute simulation time for step
+        ctx.set_param("freq_step", 0.0);
 
+        // Register signals upfront → fast indexed logging in step()
+        self.sigs.freq_hz = ctx.register_signal("freq_hz");
+        self.sigs.freq_pu = ctx.register_signal("freq_pu");
+        self.sigs.omega_rad_s = ctx.register_signal("omega_rad_s");
+        self.sigs.dq_d = ctx.register_signal("dq_d");
+        self.sigs.dq_q = ctx.register_signal("dq_q");
+        self.sigs.angle_pu = ctx.register_signal("angle_pu");
+        self.sigs.angle_rad = ctx.register_signal("angle_rad");
+        self.sigs.signal_alpha = ctx.register_signal("signal_alpha");
+        self.sigs.signal_beta = ctx.register_signal("signal_beta");
+        self.sigs.gen_freq_hz = ctx.register_signal("gen_freq_hz");
+
+        // Configure blocks
         self.pll.configure_nominal_frequency(NOMINAL_HZ as Real);
         self.pll.configure_pi_controller(GAINS_50HZ_CROSSOVER.kp, GAINS_50HZ_CROSSOVER.ti);
         self.pll.reset_with_frequency(1.0);
@@ -79,42 +109,43 @@ impl Scenario for SrfPllScenario {
     }
 
     fn step(&mut self, ctx: &mut SimContext) {
-        let t = ctx.time();
-        let nominal = ctx.param_f64("nominal_hz");
-        let freq_step = ctx.param_f64("freq_step");
-        let freq_step_at = ctx.param_f64("freq_step_at");
-
-        // Compute target frequency purely from current time and parameters.
-        // This is stateless and always correct regardless of when the user
-        // sets parameters relative to /simulate calls.
-        let current_freq = if freq_step.abs() > 1e-9 && t >= freq_step_at {
-            nominal + freq_step
-        } else {
-            nominal
-        };
-
-        self.wgen.set_frequency(current_freq);
-        self.wgen.set_amplitude(ctx.param_f64("amplitude"));
-
-        // ── Simulation step ───────────────────────────────────────────────
+        // Pure computation — no parameter polling, no string-based logging
         self.wgen.update();
         let signal_ab = self.wgen.signal().to_alphabeta();
         self.pll.update(signal_ab);
 
-        // ── Logging ───────────────────────────────────────────────────────
-        ctx.log("freq_hz", self.pll.estimated_frequency_hz());
-        ctx.log("freq_pu", self.pll.estimated_frequency_pu());
-        ctx.log("omega_rad_s", self.pll.estimated_angular_frequency());
-        ctx.log("dq_d", self.pll.dq().d());
-        ctx.log("dq_q", self.pll.dq().q());
+        // Fast indexed logging (no allocations, no HashMap lookups)
+        ctx.log_id(self.sigs.freq_hz, self.pll.estimated_frequency_hz());
+        ctx.log_id(self.sigs.freq_pu, self.pll.estimated_frequency_pu());
+        ctx.log_id(self.sigs.omega_rad_s, self.pll.estimated_angular_frequency());
+        ctx.log_id(self.sigs.dq_d, self.pll.dq().d());
+        ctx.log_id(self.sigs.dq_q, self.pll.dq().q());
 
         let angle_pu = self.pll.estimated_angle_phase_a().radians() / TWO_PI;
-        ctx.log("angle_pu", angle_pu);
-        ctx.log("angle_rad", self.pll.estimated_angle_phase_a().radians());
+        ctx.log_id(self.sigs.angle_pu, angle_pu);
+        ctx.log_id(self.sigs.angle_rad, self.pll.estimated_angle_phase_a().radians());
 
-        ctx.log("signal_alpha", signal_ab.alpha());
-        ctx.log("signal_beta", signal_ab.beta());
-        ctx.log("gen_freq_hz", current_freq as Real);
+        ctx.log_id(self.sigs.signal_alpha, signal_ab.alpha());
+        ctx.log_id(self.sigs.signal_beta, signal_ab.beta());
+        ctx.log_id(self.sigs.gen_freq_hz, self.wgen.frequency() as Real);
+    }
+
+    fn on_param_change(&mut self, name: &str, value: f64, ctx: &SimContext) {
+        match name {
+            "nominal_hz" => {
+                self.pll.configure_nominal_frequency(value as Real);
+                let full_freq = value + ctx.param_f64("freq_step");
+                self.wgen.set_frequency(full_freq);
+            }
+            "amplitude" => {
+                self.wgen.set_amplitude(value);
+            }
+            "freq_step" => {
+                let nominal = ctx.param_f64("nominal_hz");
+                self.wgen.set_frequency(nominal + value);
+            }
+            _ => {}
+        }
     }
 }
 

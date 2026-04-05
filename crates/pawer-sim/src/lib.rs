@@ -13,6 +13,6 @@ pub mod waveform_gen;
 /// Convenience re-exports for typical scenario definitions.
 pub mod prelude {
     pub use crate::cli::SimCli;
-    pub use crate::context::SimContext;
+    pub use crate::context::{SignalId, SimContext};
     pub use crate::scenario::Scenario;
 }

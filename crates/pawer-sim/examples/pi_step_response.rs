@@ -20,15 +20,30 @@ use pawer::pi_controller::PiController;
 use pawer::types::Real;
 use pawer_sim::prelude::*;
 
+#[derive(Default)]
+struct PiSignals {
+    setpoint: SignalId,
+    error: SignalId,
+    command: SignalId,
+    output: SignalId,
+}
+
 struct PiStepResponse {
     pi: PiController,
     plant_output: Real,
+    sigs: PiSignals,
 }
 
 impl Scenario for PiStepResponse {
     fn init(&mut self, ctx: &mut SimContext) {
         ctx.set_param("setpoint", 0.0);
         ctx.set_param("tau", 0.01);
+
+        self.sigs.setpoint = ctx.register_signal("setpoint");
+        self.sigs.error = ctx.register_signal("error");
+        self.sigs.command = ctx.register_signal("command");
+        self.sigs.output = ctx.register_signal("output");
+
         self.pi.configure(2.0, 100.0);
         self.plant_output = 0.0;
     }
@@ -45,10 +60,10 @@ impl Scenario for PiStepResponse {
             self.plant_output += (command - self.plant_output) * ctx.dt() / tau;
         }
 
-        ctx.log("setpoint", setpoint);
-        ctx.log("error", error);
-        ctx.log("command", command);
-        ctx.log("output", self.plant_output);
+        ctx.log_id(self.sigs.setpoint, setpoint);
+        ctx.log_id(self.sigs.error, error);
+        ctx.log_id(self.sigs.command, command);
+        ctx.log_id(self.sigs.output, self.plant_output);
     }
 }
 
@@ -56,6 +71,7 @@ fn main() {
     let scenario = PiStepResponse {
         pi: PiController::new(0.001),
         plant_output: 0.0,
+        sigs: PiSignals::default(),
     };
     let mut cli = SimCli::new(Box::new(scenario), 0.001);
     cli.run();

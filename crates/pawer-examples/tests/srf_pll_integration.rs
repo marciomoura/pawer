@@ -7,7 +7,7 @@
 use pawer::constants::TWO_PI;
 use pawer::srf_pll::{SrfPll, GAINS_50HZ_CROSSOVER};
 use pawer::types::Real;
-use pawer_sim::waveform_gen::ThreePhaseGenerator;
+use pawer_examples::waveform_gen::ThreePhaseGenerator;
 
 const TS: f64 = 100e-6; // 100 µs — 10 kHz
 const NOMINAL_HZ: f64 = 50.0;

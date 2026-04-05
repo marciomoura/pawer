@@ -1,0 +1,11 @@
+[package]
+name = "pawer-examples"
+version = "0.1.0"
+edition = "2024"
+description = "Example scenarios and simulation building blocks (waveform generators, grid models) for the pawer ecosystem"
+keywords = ["simulation", "power-electronics", "examples", "grid-model"]
+categories = ["simulation", "science"]
+
+[dependencies]
+pawer = { path = "../pawer" }
+pawer-sim = { path = "../pawer-sim" }

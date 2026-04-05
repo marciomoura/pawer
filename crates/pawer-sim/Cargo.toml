@@ -7,5 +7,9 @@ keywords = ["simulation", "control", "testing", "power-electronics", "sil"]
 categories = ["simulation", "science", "development-tools::testing"]
 
 [dependencies]
+pawer = { path = "../pawer" }
+rustyline = "15"
+plotters = { version = "0.3", default-features = false, features = ["svg_backend", "line_series"] }
+csv = "1"
 
 [dev-dependencies]

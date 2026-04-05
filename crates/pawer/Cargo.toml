@@ -1,0 +1,11 @@
+[package]
+name = "pawer"
+version = "0.1.0"
+edition = "2024"
+description = "Foundation library of basic blocks for controls of power electronic converters"
+keywords = ["embedded", "no-std", "power-electronics", "control", "dsp"]
+categories = ["embedded", "no-std", "science"]
+
+[dependencies]
+
+[dev-dependencies]

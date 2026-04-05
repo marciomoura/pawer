@@ -7,5 +7,6 @@ keywords = ["embedded", "no-std", "power-electronics", "control", "dsp"]
 categories = ["embedded", "no-std", "science"]
 
 [dependencies]
+libm = "0.2"
 
 [dev-dependencies]

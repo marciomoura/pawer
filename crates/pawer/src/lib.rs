@@ -32,3 +32,6 @@ pub mod rate_of_change_limiter;
 pub mod lookup_table_1d;
 pub mod lookup_table_2d;
 pub mod linear_ramp;
+
+// Controllers
+pub mod pi_controller;
